@@ -1,0 +1,104 @@
+2026-08-24 20:21:17,451 [INFO] chico: Inicializando Chico...
+2026-08-24 20:21:17,911 [WARNING] chico: TTS indisponível: name 'objc' is not defined
+2026-08-24 20:21:17,911 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:21:19,817 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:21:19,818 [INFO] chico: Chico pronto!
+2026-08-24 20:21:43,792 [INFO] ia_generativa: Resposta Gemini obtida (379 chars).
+2026-08-24 20:22:40,692 [INFO] chico: Inicializando Chico...
+2026-08-24 20:22:41,140 [WARNING] chico: TTS indisponível: name 'objc' is not defined
+2026-08-24 20:22:41,140 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:22:42,920 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:22:42,920 [INFO] chico: Chico pronto!
+2026-08-24 20:22:52,902 [INFO] midia: Spotify aberto para: the weekend
+2026-08-24 20:23:28,318 [INFO] midia: Spotify aberto para: the weekend
+2026-08-24 20:23:53,632 [INFO] chico: Inicializando Chico...
+2026-08-24 20:23:54,001 [WARNING] chico: TTS indisponível: name 'objc' is not defined
+2026-08-24 20:23:54,001 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:23:54,214 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:23:54,214 [INFO] chico: Chico pronto!
+2026-08-24 20:24:38,467 [INFO] ia_generativa: Resposta Gemini obtida (227 chars).
+2026-08-24 20:25:26,900 [INFO] ia_generativa: Resposta Gemini obtida (503 chars).
+2026-08-24 20:26:18,880 [INFO] ia_generativa: Resposta Gemini obtida (123 chars).
+2026-08-24 20:27:05,021 [INFO] ia_generativa: Resposta Gemini obtida (102 chars).
+2026-08-24 20:27:43,935 [INFO] agenda: Evento cadastrado: dentista amanhã às 10:00
+2026-08-24 20:29:01,905 [INFO] face: Reconhecimento facial: Nenhum rosto detectado.
+2026-08-24 20:30:31,159 [INFO] face: Reconhecimento facial: Rosto detectado (modelo não treinado)
+2026-08-24 20:30:55,832 [INFO] chico: Inicializando Chico...
+2026-08-24 20:30:56,256 [WARNING] chico: TTS indisponível: name 'objc' is not defined
+2026-08-24 20:30:56,256 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:30:57,528 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:30:57,528 [INFO] chico: Chico pronto!
+2026-08-24 20:33:46,389 [INFO] chico: Inicializando Chico...
+2026-08-24 20:33:46,845 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:33:46,912 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:33:46,912 [INFO] chico: Chico pronto!
+2026-08-24 20:37:54,720 [INFO] chico: Inicializando Chico...
+2026-08-24 20:37:55,300 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:37:56,629 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:37:56,629 [INFO] chico: Chico pronto!
+2026-08-24 20:37:57,270 [WARNING] tts: TTS neural falhou (No audio was received. Please verify that your parameters are correct.); usando voz do sistema.
+2026-08-24 20:39:18,051 [INFO] chico: Inicializando Chico...
+2026-08-24 20:39:18,678 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:39:20,193 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:39:20,193 [INFO] chico: Chico pronto!
+2026-08-24 20:40:03,942 [INFO] chico: Inicializando Chico...
+2026-08-24 20:40:04,461 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:40:04,647 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:40:04,647 [INFO] chico: Chico pronto!
+2026-08-24 20:40:46,382 [INFO] ia_generativa: Resposta Gemini obtida (111 chars).
+2026-08-24 20:41:18,383 [INFO] chico: Inicializando Chico...
+2026-08-24 20:41:18,922 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:41:19,124 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:41:19,124 [INFO] chico: Chico pronto!
+2026-08-24 20:42:17,485 [INFO] midia: Spotify aberto para: the weekend
+2026-08-24 20:42:45,909 [INFO] midia: Spotify aberto para: in your eyes de the weeknd
+2026-08-24 20:43:53,138 [INFO] chico: Inicializando Chico...
+2026-08-24 20:43:53,764 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:43:55,296 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:43:55,297 [INFO] chico: Chico pronto!
+2026-08-24 20:44:25,528 [INFO] midia: Google aberto para: sobre dia 7 de setembro independência
+2026-08-24 20:47:50,526 [INFO] chico: Inicializando Chico...
+2026-08-24 20:47:51,172 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:47:52,685 [INFO] face: Modelo facial não encontrado em data/face_model.yml — apenas detecção ativa.
+2026-08-24 20:47:52,685 [INFO] chico: Chico pronto!
+2026-08-24 20:48:06,317 [INFO] midia: Token Spotify obtido.
+2026-08-24 20:48:06,932 [WARNING] midia: AppleScript Spotify falhou: 30:40: syntax error: A identifier can’t go after this identifier. (-2740)
+2026-08-24 20:48:06,947 [WARNING] midia: Não foi possível abrir a URI do Spotify: Command '['open', 'spotify:track:7szuecWAPwGoV1e5vGu8tl']' returned non-zero exit status 1.
+2026-08-24 20:48:36,256 [WARNING] midia: AppleScript Spotify falhou: 30:40: syntax error: A identifier can’t go after this identifier. (-2740)
+2026-08-24 20:48:36,268 [WARNING] midia: Não foi possível abrir a URI do Spotify: Command '['open', 'spotify:track:5bfivmKwgSni611w5gmAFa']' returned non-zero exit status 1.
+2026-08-24 20:49:20,216 [WARNING] midia: AppleScript Spotify falhou: 30:40: syntax error: A identifier can’t go after this identifier. (-2740)
+2026-08-24 20:49:20,222 [WARNING] midia: Não foi possível abrir a URI do Spotify: Command '['open', 'spotify:track:2lTm559tuIvatlT1u0JYG2']' returned non-zero exit status 1.
+2026-08-24 20:58:37,815 [INFO] chico: Inicializando Chico...
+2026-08-24 20:58:38,458 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 20:58:38,499 [INFO] face: Nenhum modelo treinado ainda. Use 'cadastrar rosto'.
+2026-08-24 20:58:38,500 [INFO] chico: Chico pronto!
+2026-08-24 20:59:09,630 [INFO] face: Foto 1/20 salva.
+2026-08-24 20:59:09,994 [INFO] face: Foto 2/20 salva.
+2026-08-24 20:59:10,260 [INFO] face: Foto 3/20 salva.
+2026-08-24 20:59:10,524 [INFO] face: Foto 4/20 salva.
+2026-08-24 20:59:10,793 [INFO] face: Foto 5/20 salva.
+2026-08-24 20:59:11,059 [INFO] face: Foto 6/20 salva.
+2026-08-24 20:59:11,338 [INFO] face: Foto 7/20 salva.
+2026-08-24 20:59:11,625 [INFO] face: Foto 8/20 salva.
+2026-08-24 20:59:11,894 [INFO] face: Foto 9/20 salva.
+2026-08-24 20:59:12,159 [INFO] face: Foto 10/20 salva.
+2026-08-24 20:59:12,426 [INFO] face: Foto 11/20 salva.
+2026-08-24 20:59:12,693 [INFO] face: Foto 12/20 salva.
+2026-08-24 20:59:12,961 [INFO] face: Foto 13/20 salva.
+2026-08-24 20:59:13,228 [INFO] face: Foto 14/20 salva.
+2026-08-24 20:59:13,499 [INFO] face: Foto 15/20 salva.
+2026-08-24 20:59:13,765 [INFO] face: Foto 16/20 salva.
+2026-08-24 20:59:14,031 [INFO] face: Foto 17/20 salva.
+2026-08-24 20:59:14,297 [INFO] face: Foto 18/20 salva.
+2026-08-24 20:59:14,765 [INFO] face: Foto 19/20 salva.
+2026-08-24 20:59:15,030 [INFO] face: Foto 20/20 salva.
+2026-08-24 20:59:15,242 [INFO] face: Modelo treinado com 20 foto(s) de ['meu_nome_é_pedro'].
+2026-08-24 20:59:40,513 [INFO] face: Modelo facial carregado: ['meu_nome_é_pedro']
+2026-08-24 21:00:05,968 [INFO] face: Reconhecimento facial: meu_nome_é_pedro
+2026-08-24 21:02:18,438 [INFO] chico: Inicializando Chico...
+2026-08-24 21:02:18,918 [INFO] ia_generativa: Gemini configurado com sucesso.
+2026-08-24 21:02:18,982 [INFO] face: Modelo facial carregado: ['meu_nome_é_pedro']
+2026-08-24 21:02:18,982 [INFO] chico: Chico pronto!
+2026-08-24 21:02:41,841 [INFO] ia_generativa: Resposta Gemini obtida (255 chars).
+2026-08-24 21:03:26,479 [INFO] face: Foto 1/60 salva.
+2026-08-24 21:03:26,802 [INFO] face: Modelo treinado com 21 foto(s) de ['meu_nome_é_pedro', 'pedro'].
