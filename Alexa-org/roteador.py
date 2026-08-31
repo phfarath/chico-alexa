@@ -150,10 +150,14 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
     # Extras item 10 — cross-platform (Windows e Mac)
     "volume": [
         "aumenta o volume",
+        "aumente o volume",
         "diminui o volume",
+        "diminua o volume",
         "volume no maximo",
         "deixa mais alto",
         "abaixa o som",
+        "muta o volume",
+        "mutar o volume",
         "volume mutar",
         "coloca no mudo",
         "tira do mudo",

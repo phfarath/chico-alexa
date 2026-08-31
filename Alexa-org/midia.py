@@ -66,10 +66,7 @@ class Midia:
             return f"Tocando {faixa['nome']}, de {faixa['artista']}."
 
         webbrowser.open(faixa["url"])
-        return (
-            f"Encontrei {faixa['nome']}, de {faixa['artista']}. "
-            "Abri no Spotify Web — instale o app do Spotify para tocar direto no computador."
-        )
+        return f"Encontrei {faixa['nome']}, de {faixa['artista']}."
 
     def pausar(self) -> str:
         """Pausa a reprodução no app do Spotify."""

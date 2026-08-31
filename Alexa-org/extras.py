@@ -108,25 +108,26 @@ class Extras:
         """
         Controla o volume do sistema.
 
-        Entende: aumentar/aumenta/mais alto/maximo, diminuir/diminui/abaixar/menos,
-                 mutar/mudo/silenciar, desmutar/tira do mudo.
+        Entende: aumentar/aumenta/aumente, diminuir/diminui/diminua,
+                 mutar/muta/mudo/silenciar, desmutar/tira do mudo.
         Logica cross-platform: detecta Mac vs Windows no inicio, tenta o nativo
         e faz retry no alternativo se falhar.
         """
         texto = instrucao.lower()
 
-        # Classifica a acao desejada a partir da frase
-        if any(p in texto for p in ("mutar", "mudo", "silenciar", "silencia")) and "tira" not in texto and "desmut" not in texto:
+        # Classifica a acao desejada a partir da frase (inclui conjugações
+        # faladas: "muta", "diminua", "aumente"...). Sem match, NÃO assume
+        # aumentar — era isso que fazia "muta o volume" virar "Volume aumentado".
+        if any(p in texto for p in ("mutar", "muta", "mute", "mudo", "silenciar", "silencia", "silencie")) and "tira" not in texto and "desmut" not in texto:
             acao = "mute"
         elif any(p in texto for p in ("desmut", "tira do mudo", "volta o som")):
             acao = "unmute"
-        elif any(p in texto for p in ("aumenta", "aumentar", "mais alto", "maximo", "máximo", "aumentar volume")):
+        elif any(p in texto for p in ("aumenta", "aumentar", "aumente", "mais alto", "maximo", "máximo")):
             acao = "up"
-        elif any(p in texto for p in ("diminui", "diminuir", "abaixa", "abaixar", "menos", "mais baixo")):
+        elif any(p in texto for p in ("diminui", "diminuir", "diminua", "diminue", "abaixa", "abaixar", "abaixe", "menos", "mais baixo")):
             acao = "down"
         else:
-            # Se nao deu pra classificar, tenta aumentar por padrao
-            acao = "up"
+            return "Quer aumentar, diminuir ou mutar o volume?"
 
         # Tenta Mac primeiro se estiver no Mac, senao Windows
         if self.plataforma == "mac":

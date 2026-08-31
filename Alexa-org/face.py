@@ -72,6 +72,10 @@ class ReconhecimentoFacial:
         self._clahe = None
         self._reconhecedor = None
         self._nomes: list[str] = []
+        # Janelas que já reportaram WND_PROP_VISIBLE > 0. No macOS o Cocoa
+        # costuma devolver -1 o tempo todo, então só usamos o "clicou no X"
+        # depois que a propriedade já funcionou pelo menos uma vez.
+        self._janelas_visiveis: set[str] = set()
         self._iniciar_opencv()
 
     # ------------------------------------------------------------------ #
@@ -213,6 +217,11 @@ class ReconhecimentoFacial:
                 )
                 cv2.imshow(JANELA_CADASTRO, frame)
                 if self._pediu_para_fechar(JANELA_CADASTRO):
+                    logger.info(
+                        "Cadastro interrompido na foto %s/%s.",
+                        salvas,
+                        FOTOS_POR_PESSOA,
+                    )
                     break
         finally:
             # Sempre libera a câmera e força o fechamento da janela (bug do OpenCV no Mac)
@@ -463,20 +472,30 @@ class ReconhecimentoFacial:
 
     def _criar_janela(self, nome: str) -> None:
         """Cria a janela antes do imshow para poder detectá-la ao fechar."""
+        self._janelas_visiveis.discard(nome)
         self._cv2.namedWindow(nome, self._cv2.WINDOW_NORMAL)
 
     def _pediu_para_fechar(self, nome_janela: str) -> bool:
-        """True se apertou q/ESC ou a janela já não existe mais."""
-        tecla = self._cv2.waitKey(1) & 0xFF
+        """True se apertou q/ESC, ou se clicou no X (quando o backend reporta isso).
+
+        No macOS o backend Cocoa do OpenCV devolve -1 em WND_PROP_VISIBLE
+        mesmo com a janela aberta. Tratar -1 como "fechou" encerrava o
+        cadastro no primeiro frame — só 1 foto era salva das 60.
+        """
+        # 30 ms: dá tempo do Cocoa pintar a janela e deixa o loop ~30 fps
+        tecla = self._cv2.waitKey(30) & 0xFF
         if tecla in (ord("q"), 27):
             return True
         try:
             visivel = self._cv2.getWindowProperty(nome_janela, self._cv2.WND_PROP_VISIBLE)
-            autosize = self._cv2.getWindowProperty(nome_janela, self._cv2.WND_PROP_AUTOSIZE)
         except Exception:
-            return True
-        # -1 = janela destruída (clicou no X). 0/1 = ainda existe.
-        return visivel < 0 or autosize < 0
+            return False
+        if visivel > 0:
+            self._janelas_visiveis.add(nome_janela)
+            return False
+        # Só considera "clicou no X" se a janela já chegou a ficar visível.
+        # Se o backend só devolve -1 (macOS), ignoramos e o usuário sai com q.
+        return nome_janela in self._janelas_visiveis
 
     def _fechar_camera(self, cap, nome_janela: str) -> None:
         """
@@ -486,6 +505,7 @@ class ReconhecimentoFacial:
         processa o fechamento depois de alguns waitKey().
         """
         cv2 = self._cv2
+        self._janelas_visiveis.discard(nome_janela)
         if cap is not None:
             cap.release()
         if cv2 is None:
