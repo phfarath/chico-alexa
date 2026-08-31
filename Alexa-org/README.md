@@ -35,24 +35,25 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ## 🗂️ Estrutura do Projeto
 
 ```
-chico/
+.
 ├── main.py                  # Ponto de entrada
 ├── chico.py                 # Classe principal Chico (orquestra tudo)
-├── modules/
-│   ├── agenda.py            # Cadastrar, ler e limpar agenda
-│   ├── calculadora.py       # Cálculo com expressões em português
-│   ├── sistema.py           # Hora e data
-│   ├── ia_generativa.py     # Integração com Google Gemini
-│   ├── clima.py             # Previsão do tempo (Open-Meteo)
-│   ├── financas.py          # Dólar (AwesomeAPI) e Bitcoin (CoinGecko)
-│   ├── midia.py             # Spotify e Google
-│   └── face.py              # Reconhecimento facial (OpenCV)
+├── agenda.py                # Cadastrar, ler e limpar agenda
+├── calculadora.py           # Cálculo com expressões em português
+├── sistema.py               # Hora e data
+├── ia_generativa.py         # Integração com Google Gemini
+├── clima.py                 # Previsão do tempo (Open-Meteo)
+├── financas.py              # Dólar (AwesomeAPI) e Bitcoin (CoinGecko)
+├── midia.py                 # Spotify e Google
+├── face.py                  # Reconhecimento facial (OpenCV)
+├── tts.py                   # Voz neural (edge-tts) + fallback pyttsx3
 ├── data/
 │   ├── agenda.txt           # Eventos da agenda (gerado automaticamente)
-│   ├── face_model.yml       # Modelo LBPH treinado (opcional)
-│   └── face_nomes.txt       # Nomes correspondentes ao modelo (opcional)
+│   ├── face_model.yml       # Modelo LBPH treinado (gerado via face.py)
+│   ├── face_nomes.txt       # Nomes do modelo
+│   └── rostos/<nome>/*.jpg  # Fotos para treino (60 por pessoa)
 ├── requirements.txt
-├── .env.example
+├── .env.example             # Modelo de variáveis de ambiente
 └── README.md
 ```
 
@@ -66,15 +67,15 @@ git clone https://github.com/seu-usuario/chico-assistente.git
 cd chico-assistente
 ```
 
-### 2. Crie e ative um ambiente virtual
+### 2. Crie e ative um ambiente virtual (Python 3.11)
 ```bash
-python -m venv venv
+py -3.11 -m venv .venv
 
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 
 # Linux/Mac
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 ### 3. Instale as dependências
@@ -172,10 +173,13 @@ python face.py reconhecer
 | Biblioteca | Versão | Uso |
 |-----------|--------|-----|
 | SpeechRecognition | 3.10.4 | Reconhecimento de voz (Google STT) |
-| pyttsx3 | 2.90 | Síntese de voz offline |
+| pyttsx3 | 2.99 | Síntese de voz offline (fallback) |
+| edge-tts | 7.2.3 | Voz neural pt-BR |
+| pygame | 2.6.1 | Reprodução de áudio no Windows (sem abrir player) |
 | PyAudio | 0.2.14 | Captura de áudio do microfone |
-| google-generativeai | 0.7.2 | Google Gemini (IA generativa) |
-| opencv-python | 4.10.0 | Reconhecimento facial |
+| google-genai | 1.2.0 | Google Gemini (IA generativa) |
+| opencv-python | 4.10.0.84 | Reconhecimento facial (Haar) |
+| opencv-contrib-python | 4.10.0.84 | LBPHFaceRecognizer |
 | requests | 2.32.3 | APIs de clima e cotações |
 | python-dotenv | 1.0.1 | Variáveis de ambiente |
 
@@ -185,13 +189,15 @@ python face.py reconhecer
 
 | Nome | RM |
 |------|----|
-| [Nome 1] | [RM] |
+| Pedro Farath | 565007 |
 | [Nome 2] | [RM] |
 | [Nome 3] | [RM] |
 | [Nome 4] | [RM] |
 | [Nome 5] | [RM] |
 | [Nome 6] | [RM] |
 | [Nome 7] | [RM] |
+
+> TODO: preencher os 6 nomes/RMs restantes antes de enviar o link no Forms.
 
 ---
 

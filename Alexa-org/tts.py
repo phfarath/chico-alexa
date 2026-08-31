@@ -11,6 +11,7 @@ import asyncio
 import logging
 import os
 import subprocess
+import sys
 import tempfile
 
 import pyttsx3
@@ -87,12 +88,50 @@ class TTS:
 
     @staticmethod
     def _reproduzir(caminho: str) -> None:
-        subprocess.run(
-            ["afplay", caminho],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        if sys.platform == "win32":
+            try:
+                import pygame  # type: ignore
+
+                pygame.mixer.init()
+                pygame.mixer.music.load(caminho)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pygame.time.wait(100)
+                pygame.mixer.quit()
+                return
+            except ImportError:
+                pass
+            except Exception:
+                try:
+                    import pygame as _pg2
+
+                    _pg2.mixer.quit()
+                except Exception:
+                    pass
+            try:
+                subprocess.run(
+                    ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", caminho],
+                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30,
+                )
+                return
+            except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                pass
+            raise FileNotFoundError("Nenhum player de audio encontrado (instale pygame: pip install pygame)")
+        if sys.platform == "darwin":
+            subprocess.run(
+                ["afplay", caminho],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+        for cmd in (["mpg123", "-q", caminho], ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", caminho], ["aplay", caminho]):
+            try:
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+                return
+            except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                continue
+        raise FileNotFoundError("Nenhum player de audio encontrado")
 
     def _falar_sistema(self, texto: str) -> None:
         if not self._engine:

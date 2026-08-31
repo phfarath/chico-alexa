@@ -15,6 +15,9 @@ google-genai==1.2.0
 opencv-python==4.10.0.84
 opencv-contrib-python==4.10.0.84   # necessário para LBPHFaceRecognizer
 
+# Áudio (TTS neural no Windows sem abrir player)
+pygame==2.6.1
+
 # Requisições HTTP (clima, câmbio, cripto)
 requests==2.32.3
 

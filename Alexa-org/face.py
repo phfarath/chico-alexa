@@ -13,7 +13,8 @@ import logging
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
- t numpy as np
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
