@@ -13,6 +13,8 @@ from financas import Financas
 from ia_generativa import IAGenerativa
 from face import ReconhecimentoFacial
 from midia import Midia
+from extras import Extras
+from roteador import Roteador
 from sistema import Sistema
 from tts import TTS
 
@@ -52,6 +54,13 @@ class Chico:
         self.face = ReconhecimentoFacial()
         self.midia = Midia()
         self.sistema = Sistema()
+        # Extras cross-platform: detecta Windows/Mac no __init__ e faz retry
+        self.extras = Extras()
+
+        # Roteador por embeddings — remove a determinicidade dos if "palavra" in instrucao
+        # Usa TF-IDF offline por padrao; para embeddings reais do Gemini, passe usar_gemini=True
+        # (precisa de GEMINI_API_KEY e descomentar o bloco em roteador.py:_vetorizar)
+        self.roteador = Roteador()
 
         logger.info("Chico pronto!")
 
@@ -141,17 +150,35 @@ class Chico:
 
     def _processar_comando(self, instrucao: str) -> bool:
         """
-        Roteia a instrução para o módulo correto.
+        Roteia a instrução para o módulo correto via embeddings.
 
+        Fluxo:
+          1) O roteador vetoriza a instrucao e acha o intent mais proximo (cosseno).
+          2) Se o score ficar abaixo do limiar, cai no fallback da IA generativa.
+          3) Cada intent mapeia para o mesmo handler de antes — so mudou o "if".
         Args:
             instrucao: comando já sem o nome da assistente.
 
         Returns:
             False se o usuário pediu para encerrar, True caso contrário.
         """
+        # Roteamento por embeddings (TF-IDF offline por padrao)
+        intent, score, _ = self.roteador.rotear(instrucao)
+        logger.debug("Roteamento: '%s' -> %s (%.2f)", instrucao[:50], intent, score)
+
+        # Se nao reconheceu nenhum intent, deixa a IA responder (fallback nao-deterministico)
+        if intent is None:
+            # Mas ainda checa saudacao/encerrar por fallback simples para nao gastar IA
+            if not instrucao.strip():
+                self.falar("Olá! Como posso ajudar?")
+                return True
+            self.falar("Não reconheci esse comando. Consultando a IA...")
+            resposta = self.ia.perguntar(instrucao)
+            self.falar(resposta)
+            return True
 
         # ── AGENDA ──────────────────────────────────────────────────────
-        if "cadastrar" in instrucao and "agenda" in instrucao:
+        if intent == "cadastrar_agenda":
             self.falar("Ok! Qual evento devo cadastrar?")
             evento = self.ouvir_ou_digitar("Aguardando o nome do evento...")
             if evento:
@@ -160,7 +187,7 @@ class Chico:
             else:
                 self.falar("Não entendi o evento. Tente novamente.")
 
-        elif "ler" in instrucao and "agenda" in instrucao:
+        elif intent == "ler_agenda":
             eventos = self.agenda.ler_eventos()
             if eventos:
                 self.falar(f"Você tem {len(eventos)} evento(s) na agenda:")
@@ -169,30 +196,34 @@ class Chico:
             else:
                 self.falar("Sua agenda está vazia.")
 
-        elif "limpar" in instrucao and "agenda" in instrucao:
+        elif intent == "limpar_agenda":
             self.agenda.limpar_agenda()
             self.falar("Agenda limpa com sucesso!")
 
         # ── TEMPO / DATA ─────────────────────────────────────────────────
-        elif "horas" in instrucao or "que horas" in instrucao:
+        elif intent == "hora":
             hora = self.sistema.hora_atual()
             self.falar(f"São {hora}.")
 
-        elif "dia" in instrucao and "hoje" in instrucao:
+        elif intent == "data":
             dia = self.sistema.dia_atual()
             self.falar(f"Hoje é {dia}.")
 
         # ── CALCULAR ─────────────────────────────────────────────────────
-        elif "calcul" in instrucao:
+        elif intent == "calcular":
+            # Remove palavra "calcular/calcule" se existir, senao usa a frase toda (ex: "quanto e dez mais cinco")
             expressao = instrucao.replace("calcular", "").replace("calcule", "").strip()
             if not expressao:
                 self.falar("Qual operação devo calcular?")
                 expressao = self.ouvir_ou_digitar("Diga a operação...")
+            # Se ainda nao tem operador, tenta usar a instrucao original completa
+            if expressao == instrucao.replace("calcular", "").replace("calcule", "").strip() and "mais" not in expressao and "menos" not in expressao and "vezes" not in expressao:
+                expressao = instrucao
             resultado = self.calculadora.calcular(expressao)
             self.falar(resultado)
 
         # ── RECONHECIMENTO FACIAL ─────────────────────────────────────────
-        elif "cadastrar" in instrucao and ("rosto" in instrucao or "face" in instrucao):
+        elif intent == "cadastrar_rosto":
             self.falar("Qual é o seu nome?")
             nome = self.ouvir_ou_digitar("Diga o nome para cadastrar...")
             if not nome:
@@ -202,49 +233,47 @@ class Chico:
                 resultado = self.face.cadastrar(nome)
                 self.falar(resultado)
 
-        elif "reconhecer face" in instrucao or "quem sou eu" in instrucao or "reconhecer rosto" in instrucao:
+        elif intent == "reconhecer_face":
             self.falar("Abrindo a câmera para reconhecimento facial...")
             nome = self.face.reconhecer()
             self.falar(f"Reconheci: {nome}")
 
         # ── IA GENERATIVA (Gemini) ────────────────────────────────────────
-        elif "pergunta" in instrucao or "me fala sobre" in instrucao or "o que é" in instrucao or "explica" in instrucao:
+        elif intent == "ia_generativa":
             self.falar("Consultando a IA. Um momento...")
-            pergunta = instrucao
-            resposta = self.ia.perguntar(pergunta)
+            resposta = self.ia.perguntar(instrucao)
             self.falar(resposta)
 
         # ── EXTRAS: CLIMA ─────────────────────────────────────────────────
-        elif "previsão" in instrucao or "tempo" in instrucao or "clima" in instrucao:
-            # Tenta extrair a cidade mencionada
+        elif intent == "clima":
             cidade = self.clima.extrair_cidade(instrucao) or "São Paulo"
             self.falar(f"Verificando o clima em {cidade}...")
             previsao = self.clima.buscar_previsao(cidade)
             self.falar(previsao)
 
         # ── EXTRAS: FINANÇAS ──────────────────────────────────────────────
-        elif "dólar" in instrucao or "dollar" in instrucao or "câmbio" in instrucao:
+        elif intent == "dolar":
             cotacao = self.financas.cotacao_dolar()
             self.falar(cotacao)
 
-        elif "bitcoin" in instrucao or "btc" in instrucao or "cripto" in instrucao:
+        elif intent == "bitcoin":
             btc = self.financas.cotacao_bitcoin()
             self.falar(btc)
 
         # ── EXTRAS: MÍDIA ─────────────────────────────────────────────────
-        elif any(p in instrucao for p in ("pausar", "pause", "parar a música", "parar a musica")):
-            self.falar(self.midia.pausar())
+        elif intent == "controle_midia":
+            # Decide a acao pelo conteudo da frase (pausar/proxima/anterior/continuar)
+            low = instrucao.lower()
+            if any(p in low for p in ("pausar", "pause", "parar")):
+                self.falar(self.midia.pausar())
+            elif any(p in low for p in ("proxima", "próxima", "pula", "pular")):
+                self.falar(self.midia.proxima())
+            elif any(p in low for p in ("anterior", "voltar", "volta")):
+                self.falar(self.midia.anterior())
+            else:
+                self.falar(self.midia.continuar())
 
-        elif "próxima" in instrucao or "proxima" in instrucao or "pula" in instrucao:
-            self.falar(self.midia.proxima())
-
-        elif "anterior" in instrucao or "volta a música" in instrucao or "volta a musica" in instrucao:
-            self.falar(self.midia.anterior())
-
-        elif any(p in instrucao for p in ("continuar", "retomar", "despausar")):
-            self.falar(self.midia.continuar())
-
-        elif "tocar" in instrucao or "música" in instrucao or "musica" in instrucao:
+        elif intent == "tocar_musica":
             musica = (
                 instrucao.replace("tocar", "")
                 .replace("música", "")
@@ -258,7 +287,7 @@ class Chico:
                 musica = self.ouvir_ou_digitar("Nome da música...")
             self.falar(self.midia.tocar_spotify(musica))
 
-        elif "pesquisar" in instrucao or "pesquisa" in instrucao:
+        elif intent == "pesquisar":
             termo = instrucao.replace("pesquisar", "").replace("pesquisa", "").replace("no google", "").replace("google", "").strip()
             if not termo:
                 self.falar("O que devo pesquisar?")
@@ -266,21 +295,31 @@ class Chico:
             self.midia.pesquisar_google(termo)
             self.falar(f"Pesquisando '{termo}' no Google!")
 
+        # ── EXTRAS ITEM 10 (cross-platform: detecta Windows/Mac e faz retry) ─
+        elif intent == "volume":
+            self.falar(self.extras.volume(instrucao))
+
+        elif intent == "screenshot":
+            self.falar(self.extras.screenshot())
+
+        elif intent == "youtube":
+            self.falar(self.extras.youtube(instrucao))
+
+        elif intent == "portal_faculdade":
+            self.falar(self.extras.portal_faculdade())
+
         # ── SAUDAÇÕES ─────────────────────────────────────────────────────
-        elif "olá" in instrucao or "ola" in instrucao or "ei" == instrucao or instrucao == "":
+        elif intent == "saudacao":
             self.falar("Olá! Como posso ajudar?")
 
-        elif "como você está" in instrucao or "tudo bem" in instrucao:
-            self.falar("Estou funcionando perfeitamente! E você?")
-
         # ── ENCERRAR ──────────────────────────────────────────────────────
-        elif "tchau" in instrucao or "sair" in instrucao or "encerrar" in instrucao:
+        elif intent == "encerrar":
             self.falar("Até logo! Encerrando o sistema.")
             return False  # sinal para parar o loop principal
 
-        # ── COMANDO NÃO RECONHECIDO → IA como fallback ───────────────────
+        # ── FALLBACK (nao deveria cair aqui, ja tratado no inicio) ──────
         else:
-            self.falar("Não reconheci esse comando. Consultando a IA...")
+            self.falar("Consultando a IA...")
             resposta = self.ia.perguntar(instrucao)
             self.falar(resposta)
 

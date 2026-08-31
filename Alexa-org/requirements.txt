@@ -15,6 +15,14 @@ google-genai==1.2.0
 opencv-python==4.10.0.84
 opencv-contrib-python==4.10.0.84   # necessário para LBPHFaceRecognizer
 
+# Roteamento por embeddings (remove determinicidade dos comandos)
+scikit-learn==1.5.2
+
+# Extras item 10 (cross-platform Windows/Mac)
+mss==10.2.0
+pycaw==20251023; sys_platform == "win32"
+comtypes==1.4.16; sys_platform == "win32"
+
 # Áudio (TTS neural no Windows sem abrir player)
 pygame==2.6.1
 

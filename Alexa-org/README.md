@@ -27,6 +27,12 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 | 10d | `Chico tocar Shape of You no Spotify` | Toca a faixa no app do Spotify |
 | 10d+ | `Chico pausar` / `próxima` / `anterior` / `continuar` | Controla a reprodução |
 | 10e | `Chico pesquisar Python no Google` | Abre busca no Google |
+| 10f | `Chico aumenta o volume` / `diminui` / `mutar` | Controle de volume (Windows pycaw / Mac osascript) |
+| 10g | `Chico tira um print da tela` | Screenshot cross-platform (mss) |
+| 10h | `Chico abre o YouTube e toca um vídeo sobre Python` | Abre YouTube pesquisando o tema |
+| 10i | `Chico abre o portal da faculdade` | Abre o portal FIAP |
+
+> Itens 10f–10i são extras do item 10 do PDF (cross-platform Windows/Mac com retry automático).
 
 > **Regra obrigatória:** qualquer comando só é processado após o usuário dizer "Chico".
 
@@ -47,6 +53,8 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ├── midia.py                 # Spotify e Google
 ├── face.py                  # Reconhecimento facial (OpenCV)
 ├── tts.py                   # Voz neural (edge-tts) + fallback pyttsx3
+├── roteador.py              # Roteamento por embeddings (TF-IDF + Gemini opcional)
+├── extras.py                # Comandos extras cross-platform (volume, screenshot, YouTube)
 ├── data/
 │   ├── agenda.txt           # Eventos da agenda (gerado automaticamente)
 │   ├── face_model.yml       # Modelo LBPH treinado (gerado via face.py)
@@ -168,6 +176,24 @@ python face.py reconhecer
 
 ---
 
+## 🧭 Roteamento por Embeddings
+
+Comandos **não são** `if "palavra" in frase`. O `roteador.py` vetoriza a frase e compara (cosseno) com exemplos de cada intent.
+
+- **Padrão:** TF-IDF offline (sklearn, instantâneo, sem internet) — já vem pronto.
+- **Opcional:** embeddings reais do Gemini (`text-embedding-004`) — descomente o bloco em `roteador.py:_vetorizar` e use `Roteador(usar_gemini=True)` (precisa de `GEMINI_API_KEY`).
+
+```bash
+# Testa o roteador sem microfone
+.venv\Scripts\python.exe roteador.py
+# ou uma frase especifica
+.venv\Scripts\python.exe -c "from roteador import Roteador; print(Roteador().explicar('aumenta o volume'))"
+```
+
+Isso pega variações tipo "marca um compromisso pra mim" → `cadastrar_agenda` ou "me diz o horário atual" → `hora` sem cadastrar cada sinônimo.
+
+---
+
 ## 📦 Dependências Principais
 
 | Biblioteca | Versão | Uso |
@@ -178,8 +204,11 @@ python face.py reconhecer
 | pygame | 2.6.1 | Reprodução de áudio no Windows (sem abrir player) |
 | PyAudio | 0.2.14 | Captura de áudio do microfone |
 | google-genai | 1.2.0 | Google Gemini (IA generativa) |
+| scikit-learn | 1.5.2 | Roteamento por embeddings (TF-IDF) |
 | opencv-python | 4.10.0.84 | Reconhecimento facial (Haar) |
 | opencv-contrib-python | 4.10.0.84 | LBPHFaceRecognizer |
+| mss | 10.2.0 | Screenshot cross-platform |
+| pycaw | 20251023 | Controle de volume no Windows |
 | requests | 2.32.3 | APIs de clima e cotações |
 | python-dotenv | 1.0.1 | Variáveis de ambiente |
 
