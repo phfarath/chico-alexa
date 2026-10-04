@@ -29,5 +29,9 @@ pygame==2.6.1
 # Requisições HTTP (clima, câmbio, cripto)
 requests==2.32.3
 
+# Tier 1 — novas funcionalidades
+pypdf==5.4.0             # ler PDFs (notas.py); fallback PyPDF2 se ausente
+pyperclip==1.9.0         # área de transferência (desktop.py); fallbacks nativos do SO
+
 # Variáveis de ambiente
 python-dotenv==1.0.1

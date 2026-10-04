@@ -24,6 +24,8 @@ friday.log
 # Modelos/locais (61MB, nao precisa no repo publico)
 data/face_model.yml
 data/rostos/
+data/screenshots/
+data/notas.md
 # manter face_nomes.txt e agenda.txt vazia se quiser
 
 # Audio temp

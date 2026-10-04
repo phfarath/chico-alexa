@@ -48,12 +48,13 @@ class Extras:
 
     # Screenshot
 
-    def screenshot(self) -> str:
+    def capturar_tela(self) -> str:
         """
-        Tira um print da tela e salva em data/screenshots/.
+        Tira um print da tela e retorna o caminho do PNG (ou "" se falhar).
 
         Tenta: mss (mais leve) -> pyautogui -> PIL ImageGrab.
-        Nome do arquivo inclui timestamp.
+        Nome do arquivo inclui timestamp. Separada de screenshot() para que
+        outros modulos (ex.: visao.py) consigam o arquivo sem falar nada.
         """
         destino_dir = Path("data") / "screenshots"
         destino_dir.mkdir(parents=True, exist_ok=True)
@@ -70,7 +71,7 @@ class Extras:
                 img = sct.grab(monitor)
                 mss.tools.to_png(img.rgb, img.size, output=str(destino))
             logger.info("Screenshot salvo via mss: %s", destino)
-            return f"Print salvo em {destino}."
+            return str(destino)
         except ImportError:
             logger.debug("mss nao instalado, tentando pyautogui")
         except Exception as exc:
@@ -82,7 +83,7 @@ class Extras:
 
             pyautogui.screenshot(str(destino))
             logger.info("Screenshot salvo via pyautogui: %s", destino)
-            return f"Print salvo em {destino}."
+            return str(destino)
         except ImportError:
             logger.debug("pyautogui nao instalado, tentando PIL")
         except Exception as exc:
@@ -95,12 +96,23 @@ class Extras:
             img = ImageGrab.grab()
             img.save(str(destino))
             logger.info("Screenshot salvo via PIL: %s", destino)
-            return f"Print salvo em {destino}."
+            return str(destino)
         except ImportError:
-            return "Para tirar print, instale: pip install mss  (ou pip install pyautogui pillow)"
+            logger.debug("Nenhuma lib de screenshot instalada")
         except Exception as exc:
             logger.error("Screenshot falhou em todas as tentativas: %s", exc)
-            return f"Nao consegui tirar o print: {exc}"
+        return ""
+
+    def screenshot(self) -> str:
+        """
+        Tira um print da tela e salva em data/screenshots/.
+
+        Tenta: mss (mais leve) -> pyautogui -> PIL ImageGrab.
+        """
+        caminho = self.capturar_tela()
+        if caminho:
+            return f"Print salvo em {caminho}."
+        return "Para tirar print, instale: pip install mss  (ou pip install pyautogui pillow)"
 
     # Volume (Windows pycaw, Mac osascript)
 

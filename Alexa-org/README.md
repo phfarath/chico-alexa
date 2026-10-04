@@ -31,8 +31,21 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 | 10g | `Chico tira um print da tela` | Screenshot cross-platform (mss) |
 | 10h | `Chico abre o YouTube e toca um vídeo sobre Python` | Abre YouTube pesquisando o tema |
 | 10i | `Chico abre o portal da faculdade` | Abre o portal FIAP |
+| 11a | `Chico modo foco` | Rotina: muta volume, pausa Spotify e registra na agenda |
+| 11b | `Chico modo aula sobre Python` | Rotina: portal FIAP + YouTube no tema + registro na agenda |
+| 11c | `Chico bom dia` | Briefing falado: data, hora, agenda, clima e dólar |
+| 12a | `Chico o que tem na minha tela?` | Print + Gemini descreve o que está no monitor |
+| 12b | `Chico descreve a cena` | Foto da webcam + Gemini descreve o ambiente |
+| 13a | `Chico abre meu trabalho` | Busca fuzzy em Documents/Desktop/Downloads e abre o arquivo |
+| 13b | `Chico bloqueia a tela` | Trava a sessão (Windows/Mac/Linux) |
+| 13c | `Chico agenda desligamento em 30 minutos` | Agenda o desligamento (`cancela o desligamento` desfaz) |
+| 13d | `Chico o que tem no clipboard?` | Lê a área de transferência e resume com a IA |
+| 14a | `Chico anota uma ideia: ...` | Ditado vira nota estruturada em `data/notas.md` |
+| 14b | `Chico o que eu anotei?` | Lê as notas (IA resume quando está longo) |
+| 14c | `Chico lê o pdf do trabalho` | Localiza o PDF pelo nome, extrai e resume com a IA |
 
 > Itens 10f–10i são extras do item 10 do PDF (cross-platform Windows/Mac com retry automático).
+> Itens 11–14 são o **Tier 1**: funcionalidades que fazem o Chico enxergar, encadear ações e mexer no PC — cada uma segue a mesma receita do projeto (módulo + frases-exemplo no roteador + handler).
 
 > **Regra obrigatória:** qualquer comando só é processado após o usuário dizer "Chico".
 
@@ -47,7 +60,7 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ├── agenda.py                # Cadastrar, ler e limpar agenda
 ├── calculadora.py           # Cálculo com expressões em português
 ├── sistema.py               # Hora e data
-├── ia_generativa.py         # Integração com Google Gemini
+├── ia_generativa.py         # Integração com Google Gemini (texto + imagem)
 ├── clima.py                 # Previsão do tempo (Open-Meteo)
 ├── financas.py              # Dólar (AwesomeAPI) e Bitcoin (CoinGecko)
 ├── midia.py                 # Spotify e Google
@@ -55,8 +68,14 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ├── tts.py                   # Voz neural (edge-tts) + fallback pyttsx3
 ├── roteador.py              # Roteamento por embeddings (TF-IDF + Gemini opcional)
 ├── extras.py                # Comandos extras cross-platform (volume, screenshot, YouTube)
+├── rotinas.py               # Tier 1: rotinas/modos (foco, aula, bom dia)
+├── visao.py                 # Tier 1: descreve a tela e a câmera via Gemini
+├── desktop.py               # Tier 1: abrir arquivo, bloquear tela, desligamento, clipboard
+├── notas.py                 # Tier 1: anotações faladas e leitura de PDF
 ├── data/
 │   ├── agenda.txt           # Eventos da agenda (gerado automaticamente)
+│   ├── notas.md             # Caderno de notas (gerado automaticamente)
+│   ├── screenshots/         # Prints da tela (gerado automaticamente)
 │   ├── face_model.yml       # Modelo LBPH treinado (gerado via face.py)
 │   ├── face_nomes.txt       # Nomes do modelo
 │   └── rostos/<nome>/*.jpg  # Fotos para treino (60 por pessoa)
@@ -194,6 +213,34 @@ Isso pega variações tipo "marca um compromisso pra mim" → `cadastrar_agenda`
 
 ---
 
+## 🧩 Tier 1 — O Chico enxerga, encadeia e mexe no PC
+
+Novos módulos que **orquestram os que já existiam** (injeção de dependência: recebem
+as instâncias no `__init__`, nada foi reescrito):
+
+- **`rotinas.py`** — uma frase, várias ações. `modo foco` = muta volume + pausa Spotify +
+  registro na agenda; `modo aula sobre X` = portal FIAP + YouTube no tema + registro;
+  `bom dia` = briefing falado com data, hora, agenda, clima e dólar.
+- **`visao.py`** — os olhos do Chico. `o que tem na minha tela?` reusa `extras.capturar_tela()`
+  e manda o PNG ao Gemini multimodal; `descreve a cena` tira foto pela webcam (cv2) e descreve.
+- **`desktop.py`** — ações no PC. `abre meu trabalho` faz busca fuzzy por nome em
+  Documents/Desktop/Downloads (difflib, score mínimo 0.35); `bloqueia a tela` usa o comando
+  nativo de cada SO; `agenda desligamento em N minutos` (Windows `shutdown /s`, Mac/Linux
+  orienta o `sudo`); `o que tem no clipboard?` lê pyperclip/nativo e a IA resume.
+- **`notas.py`** — caderno falado em `data/notas.md`. `anota uma ideia: ...` a IA titula e
+  estrutura (sem IA, salva o texto cru); `o que eu anotei?` resume; `lê o pdf X` acha o PDF
+  pelo nome, extrai com pypdf e resume.
+
+```bash
+# Testa cada módulo isolado (com fakes, sem microfone/Gemini)
+python rotinas.py
+python visao.py
+python desktop.py
+python notas.py
+```
+
+---
+
 ## 📦 Dependências Principais
 
 | Biblioteca | Versão | Uso |
@@ -210,6 +257,8 @@ Isso pega variações tipo "marca um compromisso pra mim" → `cadastrar_agenda`
 | mss | 10.2.0 | Screenshot cross-platform |
 | pycaw | 20251023 | Controle de volume no Windows |
 | requests | 2.32.3 | APIs de clima e cotações |
+| pypdf | 5.4.0 | Extração de texto de PDF (notas.py) |
+| pyperclip | 1.9.0 | Área de transferência (desktop.py) |
 | python-dotenv | 1.0.1 | Variáveis de ambiente |
 
 ---
