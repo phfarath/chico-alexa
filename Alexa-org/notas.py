@@ -62,7 +62,7 @@ class Notas:
             Texto da nota, ou "" se o usuário só pediu para anotar.
         """
         texto = PADRAO_GATILHOS_NOTA.sub(" ", instrucao.lower())
-        return " ".join(texto.split()).strip(" :.-")
+        return " ".join(texto.split()).strip(" ,;:.!?-")
 
     def anotar(self, texto: str) -> str:
         """
@@ -119,7 +119,7 @@ class Notas:
             Resumo falado, ou mensagem do que faltou.
         """
         termo = PADRAO_GATILHOS_PDF.sub(" ", instrucao.lower())
-        termo = " ".join(termo.split()).strip()
+        termo = " ".join(termo.split()).strip(" ,;:.!?-")
 
         caminho = buscar_arquivo(termo, extensoes={".pdf"}) if termo else self._pdf_mais_recente()
         if caminho is None:

@@ -56,7 +56,7 @@ PADRAO_GATILHOS_ARQUIVO = re.compile(
 def _termo_busca(instrucao: str) -> str:
     """Remove as palavras de comando; sobra só o nome do arquivo procurado."""
     termo = PADRAO_GATILHOS_ARQUIVO.sub(" ", instrucao.lower())
-    return " ".join(termo.split()).strip()
+    return " ".join(termo.split()).strip(" ,;:.!?-")
 
 
 def buscar_arquivo(termo: str, extensoes: set[str] | None = None) -> Path | None:

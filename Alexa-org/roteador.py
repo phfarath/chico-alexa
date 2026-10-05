@@ -171,6 +171,9 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
         "print screen",
     ],
     "youtube": [
+        "abre o youtube",
+        "abre youtube",
+        "entra no youtube",
         "abre o youtube e toca um video sobre",
         "toca um video no youtube sobre",
         "abre youtube e roda um video",
@@ -231,6 +234,9 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
         "bloqueia o pc",
     ],
     "desligar_pc": [
+        "desliga o pc",
+        "desliga o computador",
+        "desliga o notebook",
         "agenda desligamento em 30 minutos",
         "desliga o pc em uma hora",
         "programa o computador pra desligar",

@@ -156,7 +156,8 @@ class Chico:
         """
         for alias in ALIASES_ATIVACAO:
             comando = comando.replace(alias, "").strip()
-        return comando
+        # Tira pontuação residual das bordas (ex.: "chico, anota isso" -> ", anota isso")
+        return comando.strip(" ,;:.!?-")
 
     def _processar_comando(self, instrucao: str) -> bool:
         """

@@ -158,7 +158,9 @@ class Extras:
         # Nenhum metodo funcionou — informa como fazer manual
         if self.plataforma == "windows":
             return "Nao consegui controlar o volume. No Windows instale pycaw: pip install pycaw comtypes"
-        return "Nao consegui controlar o volume no Mac. Verifique a permissao de automacao."
+        if self.plataforma == "mac":
+            return "Nao consegui controlar o volume no Mac. Verifique a permissao de automacao."
+        return "Nao consegui controlar o volume — suportado no Windows e no Mac por enquanto."
 
     def _volume_mac(self, acao: str) -> bool:
         """Controla volume no Mac via osascript. Retorna True se conseguiu."""
