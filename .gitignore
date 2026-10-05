@@ -26,6 +26,7 @@ data/face_model.yml
 data/rostos/
 **/data/screenshots/
 **/data/notas.md
+**/data/perfis/
 # manter face_nomes.txt e agenda.txt vazia se quiser
 
 # Audio temp

@@ -46,10 +46,16 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 | 15a | `Chico me lembra da prova às 8 e vê o clima` | **Planner por function calling**: a IA encadeia várias ações de uma frase |
 | 15b | `Chico para de me interromper` / `liga o modo proativo` | Liga/desliga os avisos espontâneos (lembretes + presença) |
 | 15c | `Chico esquece tudo que eu falei` | Zera a memória de conversa da IA |
+| 16a | `Chico me reconhece` | Rosto vira login: agenda/notas passam a ser só suas |
+| 16b | `Chico troca de usuário` / `sai do meu perfil` / `quem tá logado` | Troca de perfil ou mostra o atual |
+| 16c | `Chico limpa a agenda` (sensível) | Gate biométrico: pede rosto reconhecido antes |
+| 17a | `Chico me faz um quiz da prova` | Perguntas geradas pela IA a partir da agenda |
+| 17b | `Chico quiz sobre cálculo` / `me testa` | Quiz de tema livre ou das suas anotações |
 
 > Itens 10f–10i são extras do item 10 do PDF (cross-platform Windows/Mac com retry automático).
 > Itens 11–14 são o **Tier 1**: funcionalidades que fazem o Chico enxergar, encadear ações e mexer no PC — cada uma segue a mesma receita do projeto (módulo + frases-exemplo no roteador + handler).
 > Item 15 é o **Tier 2**: o Chico vira agente — planeja chamadas de função, fala primeiro e lembra da conversa.
+> Itens 16–17 são o **Tier 3**: identidade por rosto e quiz de estudo.
 
 > **Regra obrigatória:** qualquer comando só é processado após o usuário dizer "Chico".
 
@@ -78,10 +84,13 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ├── notas.py                 # Tier 1: anotações faladas e leitura de PDF
 ├── agente.py                # Tier 2: planner por function calling do Gemini
 ├── proativo.py              # Tier 2: lembretes da agenda + detecção de presença
+├── perfis.py                # Tier 3: perfis por rosto + gate biométrico
+├── quiz.py                  # Tier 3: quiz de estudo gerado pela IA
 ├── data/
 │   ├── agenda.txt           # Eventos da agenda (gerado automaticamente)
 │   ├── notas.md             # Caderno de notas (gerado automaticamente)
 │   ├── screenshots/         # Prints da tela (gerado automaticamente)
+│   ├── perfis/<nome>/       # Agenda/notas por pessoa (Tier 3, gerado automaticamente)
 │   ├── face_model.yml       # Modelo LBPH treinado (gerado via face.py)
 │   ├── face_nomes.txt       # Nomes do modelo
 │   └── rostos/<nome>/*.jpg  # Fotos para treino (60 por pessoa)
@@ -270,6 +279,27 @@ receita (módulo + intent + handler).
 ```bash
 python agente.py    # valida o mapa de tools (sem API)
 python proativo.py  # parse de horário + janela de lembrete (sem câmera)
+```
+
+---
+
+## 🎭 Tier 3 — Identidade por rosto e quiz de estudo
+
+- **`perfis.py`** — a câmera vira login. `me reconhece` identifica o rosto e abre
+  o perfil: `agenda.txt` e `notas.md` passam a vir de `data/perfis/<nome>/` em vez
+  do `data/` global (o `trocar()` de agenda/notas redireciona o arquivo sem trocar
+  a instância — rotinas, proativo, quiz e agente seguem o perfil sozinhos).
+  `sai do meu perfil` fecha e volta aos dados globais.
+  **Gate biométrico**: `limpar_agenda`, `desligar_pc` e `bloquear_tela` pedem rosto
+  reconhecido antes de executar. Rosto desconhecido → nega; sem câmera → degrada
+  aberto com aviso no log (não trava o usuário num PC sem webcam).
+- **`quiz.py`** — `me faz um quiz da prova` puxa eventos com "prova" da agenda como
+  tema; `quiz sobre X` vai direto; sem tema usa o `data/notas.md`. A IA gera 3
+  perguntas, o chico conduz a conversa e a IA corrige cada resposta (CERTO/ERRADO).
+
+```bash
+python perfis.py  # login/gate/sair com face fake (sem câmera)
+python quiz.py    # preparar/avaliar com IA fake
 ```
 
 ---

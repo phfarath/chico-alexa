@@ -284,6 +284,24 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
         "esquece tudo que eu falei",
         "começa do zero",
     ],
+    # Tier 3 — identidade e estudo
+    "perfil": [
+        "troca de usuário",
+        "me reconhece de novo",
+        "sai do meu perfil",
+        "quem ta logado",
+        "abre meu perfil",
+        "troca de perfil",
+        "entra no meu perfil",
+    ],
+    "quiz": [
+        "me faz um quiz",
+        "quiz sobre",
+        "me testa",
+        "quiz da prova",
+        "me faz perguntas",
+        "quiz de estudo",
+    ],
     "ler_pdf": [
         "le o pdf",
         "resume o pdf",
