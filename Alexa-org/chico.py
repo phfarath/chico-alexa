@@ -9,14 +9,18 @@ import speech_recognition as sr
 from agenda import Agenda
 from calculadora import Calculadora
 from clima import Clima
+from desktop import Desktop
 from financas import Financas
 from ia_generativa import IAGenerativa
 from face import ReconhecimentoFacial
 from midia import Midia
+from notas import Notas
 from extras import Extras
+from rotinas import Rotinas
 from roteador import Roteador
 from sistema import Sistema
 from tts import TTS
+from visao import Visao
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +60,12 @@ class Chico:
         self.sistema = Sistema()
         # Extras cross-platform: detecta Windows/Mac no __init__ e faz retry
         self.extras = Extras()
+
+        # Tier 1 — modulos novos que orquestram os ja existentes (injecao de dependencia)
+        self.rotinas = Rotinas(self.extras, self.midia, self.agenda, self.sistema, self.clima, self.financas)
+        self.visao = Visao(self.extras, self.ia)
+        self.desktop = Desktop(self.ia)
+        self.notas = Notas(self.ia)
 
         # Roteador por embeddings — remove a determinicidade dos if "palavra" in instrucao
         # Usa TF-IDF offline por padrao; para embeddings reais do Gemini, passe usar_gemini=True
@@ -146,7 +156,8 @@ class Chico:
         """
         for alias in ALIASES_ATIVACAO:
             comando = comando.replace(alias, "").strip()
-        return comando
+        # Tira pontuação residual das bordas (ex.: "chico, anota isso" -> ", anota isso")
+        return comando.strip(" ,;:.!?-")
 
     def _processar_comando(self, instrucao: str) -> bool:
         """
@@ -307,6 +318,51 @@ class Chico:
 
         elif intent == "portal_faculdade":
             self.falar(self.extras.portal_faculdade())
+
+        # ── TIER 1: ROTINAS (1 frase -> varias acoes) ───────────────────────
+        elif intent == "rotina":
+            for mensagem in self.rotinas.despachar(instrucao):
+                self.falar(mensagem)
+
+        # ── TIER 1: VISÃO (tela e câmera descritas pelo Gemini) ─────────────
+        elif intent == "ver_tela":
+            self.falar("Deixa eu ver sua tela...")
+            self.falar(self.visao.ver_tela())
+
+        elif intent == "descrever_cena":
+            self.falar("Olhando pela câmera...")
+            self.falar(self.visao.descrever_cena())
+
+        # ── TIER 1: DESKTOP (ações no PC) ───────────────────────────────────
+        elif intent == "abrir_arquivo":
+            self.falar(self.desktop.abrir_arquivo(instrucao))
+
+        elif intent == "bloquear_tela":
+            self.falar(self.desktop.bloquear_tela())
+
+        elif intent == "desligar_pc":
+            if any(p in instrucao for p in ("cancela", "cancelar", "desfaz")):
+                self.falar(self.desktop.cancelar_desligamento())
+            else:
+                self.falar(self.desktop.agendar_desligamento(instrucao))
+
+        elif intent == "clipboard":
+            self.falar(self.desktop.clipboard())
+
+        # ── TIER 1: NOTAS (caderno falado + leitura de PDF) ─────────────────
+        elif intent == "anotar":
+            ditado = self.notas.extrair_ditado(instrucao)
+            if not ditado:
+                self.falar("O que devo anotar?")
+                ditado = self.ouvir_ou_digitar("Ditando a nota...")
+            self.falar(self.notas.anotar(ditado))
+
+        elif intent == "ler_notas":
+            self.falar(self.notas.ler_notas())
+
+        elif intent == "ler_pdf":
+            self.falar("Deixa eu ler esse PDF...")
+            self.falar(self.notas.ler_pdf(instrucao))
 
         # ── SAUDAÇÕES ─────────────────────────────────────────────────────
         elif intent == "saudacao":

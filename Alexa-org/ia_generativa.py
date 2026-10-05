@@ -71,3 +71,42 @@ class IAGenerativa:
         except Exception as exc:
             logger.error("Erro ao consultar Gemini: %s", exc)
             return "Não consegui obter uma resposta da IA agora. Tente novamente."
+
+    def perguntar_com_imagem(self, pergunta: str, imagem: bytes, mime_type: str = "image/png") -> str:
+        """
+        Envia uma pergunta junto com uma imagem ao Gemini (visão multimodal).
+
+        Args:
+            pergunta: instrução sobre a imagem (ex.: "descreva a cena").
+            imagem: bytes da imagem (PNG/JPEG).
+            mime_type: tipo MIME da imagem.
+
+        Returns:
+            Descrição gerada pela IA, ou mensagem de fallback.
+        """
+        if not self._disponivel or self._client is None:
+            return (
+                "A IA generativa não está configurada. "
+                "Adicione sua GEMINI_API_KEY no arquivo .env."
+            )
+        try:
+            parte_imagem = google_genai.types.Part.from_bytes(
+                data=imagem, mime_type=mime_type
+            )
+            resposta = self._client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents=[pergunta, parte_imagem],
+                config=google_genai.types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                ),
+            )
+            texto = (resposta.text or "").strip()
+            if not texto:
+                return "Não consegui analisar a imagem agora. Tente novamente."
+            if len(texto) > 500:
+                texto = texto[:500] + "..."
+            logger.info("Resposta Gemini (imagem) obtida (%d chars).", len(texto))
+            return texto
+        except Exception as exc:
+            logger.error("Erro ao enviar imagem ao Gemini: %s", exc)
+            return "Não consegui analisar a imagem agora. Tente novamente."
