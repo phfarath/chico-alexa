@@ -49,9 +49,13 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
         "abre a agenda",
         "o que tenho marcado",
         "ver agenda",
+        "me mostra a agenda",
+        "mostra a agenda",
     ],
     "limpar_agenda": [
         "limpar agenda",
+        "limpa a agenda",
+        "apaga a agenda",
         "apagar todos os eventos",
         "esvaziar agenda",
         "deletar compromissos",
@@ -287,9 +291,13 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
     # Tier 3 — identidade e estudo
     "perfil": [
         "troca de usuário",
+        "me reconhece",
+        "me reconheça",
         "me reconhece de novo",
         "sai do meu perfil",
         "quem ta logado",
+        "quem esta logado",
+        "mostra meu perfil",
         "abre meu perfil",
         "troca de perfil",
         "entra no meu perfil",
