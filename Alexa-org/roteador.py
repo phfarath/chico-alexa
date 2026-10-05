@@ -266,6 +266,24 @@ INTENTS_EXEMPLOS: dict[str, list[str]] = {
         "resumo das minhas notas",
         "minhas anotacoes da semana",
     ],
+    # Tier 2 — comportamento agêntico (proatividade e memória)
+    "proativo": [
+        "liga o modo proativo",
+        "ativa os lembretes",
+        "fica de olho em mim",
+        "para de me interromper",
+        "desativa os avisos",
+        "para de falar sozinho",
+        "me avisa quando chegar a hora",
+    ],
+    "memoria": [
+        "esquece o que a gente conversou",
+        "limpa a memória",
+        "apaga o histórico",
+        "zera a memória",
+        "esquece tudo que eu falei",
+        "começa do zero",
+    ],
     "ler_pdf": [
         "le o pdf",
         "resume o pdf",

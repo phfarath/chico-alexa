@@ -5,6 +5,7 @@ Utiliza a API gratuita do Gemini para responder perguntas abertas.
 
 import logging
 import os
+from collections import deque
 
 from google import genai as google_genai
 
@@ -24,6 +25,9 @@ class IAGenerativa:
         """Configura a API do Gemini."""
         self._disponivel = False
         self._client = None
+        # Memória rolante: últimos N pares (pergunta, resposta) entram no
+        # contexto — é o que faz "e por quê?" funcionar depois de uma resposta.
+        self._historico: deque[tuple[str, str]] = deque(maxlen=10)
         api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key:
             logger.warning(
@@ -56,7 +60,7 @@ class IAGenerativa:
         try:
             resposta = self._client.models.generate_content(
                 model="gemini-3.5-flash",
-                contents=pergunta,
+                contents=self._montar_conversa(pergunta),
                 config=google_genai.types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
                 ),
@@ -66,11 +70,26 @@ class IAGenerativa:
                 return "Não consegui obter uma resposta da IA agora. Tente novamente."
             if len(texto) > 500:
                 texto = texto[:500] + "..."
+            self._historico.append((pergunta, texto))
             logger.info("Resposta Gemini obtida (%d chars).", len(texto))
             return texto
         except Exception as exc:
             logger.error("Erro ao consultar Gemini: %s", exc)
             return "Não consegui obter uma resposta da IA agora. Tente novamente."
+
+    def _montar_conversa(self, pergunta: str) -> list[dict]:
+        """Histórico rolante + pergunta nova, no formato de turnos do Gemini."""
+        turnos: list[dict] = []
+        for usuario, chico in self._historico:
+            turnos.append({"role": "user", "parts": [{"text": usuario}]})
+            turnos.append({"role": "model", "parts": [{"text": chico}]})
+        turnos.append({"role": "user", "parts": [{"text": pergunta}]})
+        return turnos
+
+    def limpar_historico(self) -> None:
+        """Zera a memória da conversa ('esquece tudo que a gente falou')."""
+        self._historico.clear()
+        logger.info("Histórico da IA zerado.")
 
     def perguntar_com_imagem(self, pergunta: str, imagem: bytes, mime_type: str = "image/png") -> str:
         """
@@ -110,3 +129,17 @@ class IAGenerativa:
         except Exception as exc:
             logger.error("Erro ao enviar imagem ao Gemini: %s", exc)
             return "Não consegui analisar a imagem agora. Tente novamente."
+
+
+if __name__ == "__main__":
+    # Teste rápido sem API: confere a montagem da conversa e o teto do deque
+    ia = IAGenerativa()
+    for i in range(12):
+        ia._historico.append((f"pergunta {i}", f"resposta {i}"))
+    conversa = ia._montar_conversa("e por quê?")
+    assert len(conversa) == 21, len(conversa)  # 10 pares + pergunta nova
+    assert conversa[-1]["parts"][0]["text"] == "e por quê?"
+    assert conversa[0]["parts"][0]["text"] == "pergunta 2"  # rolou a janela
+    ia.limpar_historico()
+    assert ia._montar_conversa("oi") == [{"role": "user", "parts": [{"text": "oi"}]}]
+    print("memoria OK")

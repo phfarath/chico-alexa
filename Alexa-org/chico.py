@@ -4,9 +4,12 @@ Contém a classe Chico que orquestra todos os comandos.
 """
 
 import logging
+import threading
+
 import speech_recognition as sr
 
 from agenda import Agenda
+from agente import Agente
 from calculadora import Calculadora
 from clima import Clima
 from desktop import Desktop
@@ -16,6 +19,7 @@ from face import ReconhecimentoFacial
 from midia import Midia
 from notas import Notas
 from extras import Extras
+from proativo import Proativo
 from rotinas import Rotinas
 from roteador import Roteador
 from sistema import Sistema
@@ -47,7 +51,9 @@ class Chico:
         self.recognizer.energy_threshold = 300
 
         # Síntese de voz (neural + fallback do sistema)
+        # Lock: a thread proativa também fala — serializa o TTS/print
         self._tts = TTS()
+        self._lock_falar = threading.Lock()
 
         # Módulos de funcionalidade
         self.agenda = Agenda()
@@ -67,6 +73,11 @@ class Chico:
         self.desktop = Desktop(self.ia)
         self.notas = Notas(self.ia)
 
+        # Tier 2 — agente planeja chamadas de ferramenta pelo Gemini e a
+        # thread proativa fala primeiro (lembretes da agenda + presença)
+        self.agente = Agente(self.ia, self)
+        self.proativo = Proativo(self.agenda, self.falar)
+
         # Roteador por embeddings — remove a determinicidade dos if "palavra" in instrucao
         # Usa TF-IDF offline por padrao; para embeddings reais do Gemini, passe usar_gemini=True
         # (precisa de GEMINI_API_KEY e descomentar o bloco em roteador.py:_vetorizar)
@@ -79,9 +90,10 @@ class Chico:
     # ------------------------------------------------------------------ #
 
     def falar(self, texto: str) -> None:
-        """Sintetiza voz e imprime o texto no console."""
-        print(f"\n🤖 Chico: {texto}")
-        self._tts.falar(texto)
+        """Sintetiza voz e imprime o texto no console (thread-safe)."""
+        with self._lock_falar:
+            print(f"\n🤖 Chico: {texto}")
+            self._tts.falar(texto)
 
     # ------------------------------------------------------------------ #
     #  ESCUTA                                                              #
@@ -177,11 +189,18 @@ class Chico:
         intent, score, _ = self.roteador.rotear(instrucao)
         logger.debug("Roteamento: '%s' -> %s (%.2f)", instrucao[:50], intent, score)
 
-        # Se nao reconheceu nenhum intent, deixa a IA responder (fallback nao-deterministico)
+        # Se nao reconheceu nenhum intent, o agente tenta planejar com as
+        # ferramentas (ex.: "agenda a prova sexta e vê o clima"); sem Gemini
+        # ou sem tool útil cai no fallback comum de IA generativa.
         if intent is None:
             # Mas ainda checa saudacao/encerrar por fallback simples para nao gastar IA
             if not instrucao.strip():
                 self.falar("Olá! Como posso ajudar?")
+                return True
+            mensagens = self.agente.despachar(instrucao)
+            if mensagens:
+                for mensagem in mensagens:
+                    self.falar(mensagem)
                 return True
             self.falar("Não reconheci esse comando. Consultando a IA...")
             resposta = self.ia.perguntar(instrucao)
@@ -364,12 +383,23 @@ class Chico:
             self.falar("Deixa eu ler esse PDF...")
             self.falar(self.notas.ler_pdf(instrucao))
 
+        # ── TIER 2: COMPORTAMENTO AGÊNTICO ────────────────────────────────
+        elif intent == "proativo":
+            low = instrucao.lower()
+            desligar = any(p in low for p in ("desativ", "deslig", "para", "parar", "quieto", "silêncio", "silencio"))
+            self.falar(self.proativo.set_ativo(not desligar))
+
+        elif intent == "memoria":
+            self.ia.limpar_historico()
+            self.falar("Pronto, esqueci tudo que a gente conversou.")
+
         # ── SAUDAÇÕES ─────────────────────────────────────────────────────
         elif intent == "saudacao":
             self.falar("Olá! Como posso ajudar?")
 
         # ── ENCERRAR ──────────────────────────────────────────────────────
         elif intent == "encerrar":
+            self.proativo.parar()
             self.falar("Até logo! Encerrando o sistema.")
             return False  # sinal para parar o loop principal
 
@@ -392,6 +422,7 @@ class Chico:
         A assistente só processa comandos após reconhecer o próprio nome.
         Se o nome não for detectado, apenas imprime o texto reconhecido.
         """
+        self.proativo.iniciar()
         self.falar("Sistema Chico inicializado. Diga 'Chico' para ativar.")
         print("\n" + "=" * 60)
         print("  C.H.I.C.O. — Assistente Virtual")
@@ -422,5 +453,6 @@ class Chico:
 
             except KeyboardInterrupt:
                 print("\n\n⚡ Interrompido pelo usuário.")
+                self.proativo.parar()
                 self.falar("Encerrando. Até logo!")
                 break

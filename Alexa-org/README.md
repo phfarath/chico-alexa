@@ -43,9 +43,13 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 | 14a | `Chico anota uma ideia: ...` | Ditado vira nota estruturada em `data/notas.md` |
 | 14b | `Chico o que eu anotei?` | Lê as notas (IA resume quando está longo) |
 | 14c | `Chico lê o pdf do trabalho` | Localiza o PDF pelo nome, extrai e resume com a IA |
+| 15a | `Chico me lembra da prova às 8 e vê o clima` | **Planner por function calling**: a IA encadeia várias ações de uma frase |
+| 15b | `Chico para de me interromper` / `liga o modo proativo` | Liga/desliga os avisos espontâneos (lembretes + presença) |
+| 15c | `Chico esquece tudo que eu falei` | Zera a memória de conversa da IA |
 
 > Itens 10f–10i são extras do item 10 do PDF (cross-platform Windows/Mac com retry automático).
 > Itens 11–14 são o **Tier 1**: funcionalidades que fazem o Chico enxergar, encadear ações e mexer no PC — cada uma segue a mesma receita do projeto (módulo + frases-exemplo no roteador + handler).
+> Item 15 é o **Tier 2**: o Chico vira agente — planeja chamadas de função, fala primeiro e lembra da conversa.
 
 > **Regra obrigatória:** qualquer comando só é processado após o usuário dizer "Chico".
 
@@ -72,6 +76,8 @@ Só executa ações após reconhecer o nome **"Chico"** — assim como uma assis
 ├── visao.py                 # Tier 1: descreve a tela e a câmera via Gemini
 ├── desktop.py               # Tier 1: abrir arquivo, bloquear tela, desligamento, clipboard
 ├── notas.py                 # Tier 1: anotações faladas e leitura de PDF
+├── agente.py                # Tier 2: planner por function calling do Gemini
+├── proativo.py              # Tier 2: lembretes da agenda + detecção de presença
 ├── data/
 │   ├── agenda.txt           # Eventos da agenda (gerado automaticamente)
 │   ├── notas.md             # Caderno de notas (gerado automaticamente)
@@ -237,6 +243,33 @@ python rotinas.py
 python visao.py
 python desktop.py
 python notas.py
+```
+
+---
+
+## 🤖 Tier 2 — O Chico vira agente
+
+O salto de "uma frase → uma ação" para **planejamento**: três peças novas, mesma
+receita (módulo + intent + handler).
+
+- **`agente.py`** — planner por *function calling*. Quando o roteador não
+  reconhece o intent (ou a frase pede várias coisas), o Gemini recebe ~20
+  ferramentas que apontam 1:1 para métodos já existentes (`agenda.cadastrar_evento`,
+  `clima.buscar_previsao`, `desktop.abrir_arquivo`...) e devolve chamadas de
+  função encadeadas. Cada resultado é falado na hora e volta ao modelo até ele
+  concluir. Ex.: `Chico me lembra da prova às 8 e vê o clima` → agenda + clima.
+  Sem `GEMINI_API_KEY`, o planner nem é consultado e o fallback antigo responde.
+- **`proativo.py`** — o Chico fala primeiro. Thread daemon checa a agenda a cada
+  30s: eventos com horário no texto ("prova às 18h") disparam lembrete na hora.
+  A cada 5min, um frame da webcam passa pelo Haar (mesmo detector do `face.py`):
+  na transição ausente→presente ele saúda, com cooldown de 45min. Sem câmera,
+  falha em silêncio. `para de me interromper` desliga sem matar a thread.
+- **memória** — `ia_generativa` guarda as últimas 10 trocas e injeta no contexto:
+  follow-ups tipo `e por quê?` funcionam. `esquece tudo que eu falei` zera.
+
+```bash
+python agente.py    # valida o mapa de tools (sem API)
+python proativo.py  # parse de horário + janela de lembrete (sem câmera)
 ```
 
 ---
