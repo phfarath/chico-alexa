@@ -162,7 +162,7 @@ class ReconhecimentoFacial:
 
         cap = self._abrir_camera()
         if cap is None:
-            return "Não consegui acessar a câmera. Verifique a permissão no macOS."
+            return "Não consegui acessar a câmera. Verifique a permissão do sistema."
 
         cv2 = self._cv2
         salvas = 0
@@ -322,7 +322,7 @@ class ReconhecimentoFacial:
 
         cap = self._abrir_camera()
         if cap is None:
-            return "Não consegui acessar a câmera. Verifique a permissão no macOS."
+            return "Não consegui acessar a câmera. Verifique a permissão do sistema."
 
         cv2 = self._cv2
         treinado = bool(self._reconhecedor and self._nomes)

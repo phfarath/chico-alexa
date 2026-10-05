@@ -43,13 +43,31 @@ CHARS_MAX_RESUMO = 6000
 class Notas:
     """Gerencia anotações pessoais e leitura de PDFs em voz alta."""
 
-    def __init__(self, ia) -> None:
-        """Recebe IAGenerativa para titular/resumir conteúdo."""
+    def __init__(self, ia, caminho: Path | None = None) -> None:
+        """
+        Recebe IAGenerativa para titular/resumir conteúdo.
+
+        Args:
+            caminho: arquivo alternativo (perfis por rosto usam
+                     data/perfis/<nome>/notas.md). Padrão: notas.md global.
+        """
         self.ia = ia
-        NOTAS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        if not NOTAS_PATH.exists():
-            NOTAS_PATH.touch()
-            logger.info("Arquivo notas.md criado em %s", NOTAS_PATH)
+        self._path = caminho or NOTAS_PATH
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._path.exists():
+            self._path.touch()
+            logger.info("Arquivo de notas criado em %s", self._path)
+
+    def trocar(self, caminho: Path | None = None) -> None:
+        """
+        Troca o caderno em uso (perfis por rosto). Referências guardadas
+        em outros módulos seguem válidas. None = volta ao notas.md global.
+        """
+        self._path = caminho or NOTAS_PATH
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._path.exists():
+            self._path.touch()
+        logger.info("Notas agora aponta para %s", self._path)
 
     def extrair_ditado(self, instrucao: str) -> str:
         """
@@ -87,17 +105,17 @@ class Notas:
             corpo = f"## Nota\n- {texto}"
 
         timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
-        with open(NOTAS_PATH, "a", encoding="utf-8") as arquivo:
+        with open(self._path, "a", encoding="utf-8") as arquivo:
             arquivo.write(f"\n---\n*{timestamp}*\n\n{corpo}\n")
         logger.info("Nota registrada em %s", NOTAS_PATH)
         return "Anotado!"
 
     def ler_notas(self) -> str:
         """Lê as notas em voz alta; a IA resume quando o caderno está longo."""
-        if not NOTAS_PATH.exists() or not NOTAS_PATH.read_text(encoding="utf-8").strip():
+        if not self._path.exists() or not self._path.read_text(encoding="utf-8").strip():
             return "Você ainda não tem notas. Diga 'anota uma ideia' para começar."
 
-        conteudo = NOTAS_PATH.read_text(encoding="utf-8").strip()
+        conteudo = self._path.read_text(encoding="utf-8").strip()
         if len(conteudo) > 1500:
             return self.ia.perguntar(
                 "Resuma em até 4 frases as anotações abaixo, como quem conta "
@@ -121,23 +139,29 @@ class Notas:
         termo = PADRAO_GATILHOS_PDF.sub(" ", instrucao.lower())
         termo = " ".join(termo.split()).strip(" ,;:.!?-")
 
-        caminho = buscar_arquivo(termo, extensoes={".pdf"}) if termo else self._pdf_mais_recente()
-        if caminho is None:
+        caminho_pdf = buscar_arquivo(termo, extensoes={".pdf"}) if termo else self._pdf_mais_recente()
+        if caminho_pdf is None:
             return (
                 "Não achei o PDF em Documents, Desktop ou Downloads. "
                 "Diga o nome do arquivo, ex.: 'lê o pdf do trabalho final'."
             )
 
-        texto = self._extrair_texto_pdf(caminho)
+        texto = self._extrair_texto_pdf(caminho_pdf)
         if texto is None:
             return "Para ler PDF preciso do pypdf: pip install pypdf"
         if not texto.strip():
-            return f"O PDF {caminho.name} não tem texto extraível — pode ser um documento escaneado."
+            return f"O PDF {caminho_pdf.name} não tem texto extraível — pode ser um documento escaneado."
 
         return self.ia.perguntar(
-            f"Resuma em até 5 frases o conteúdo do documento '{caminho.name}', "
+            f"Resuma em até 5 frases o conteúdo do documento '{caminho_pdf.name}', "
             f"como quem explica o essencial para alguém:\n\n{texto[:CHARS_MAX_RESUMO]}"
         )
+
+    def texto_cru(self) -> str:
+        """Conteúdo bruto do caderno — usado como fonte pelo quiz de estudo."""
+        if not self._path.exists():
+            return ""
+        return self._path.read_text(encoding="utf-8").strip()
 
     @staticmethod
     def _pdf_mais_recente() -> Path | None:

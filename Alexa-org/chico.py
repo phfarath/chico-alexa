@@ -19,7 +19,9 @@ from face import ReconhecimentoFacial
 from midia import Midia
 from notas import Notas
 from extras import Extras
+from perfis import Perfis
 from proativo import Proativo
+from quiz import Quiz
 from rotinas import Rotinas
 from roteador import Roteador
 from sistema import Sistema
@@ -31,6 +33,9 @@ logger = logging.getLogger(__name__)
 # Nome de ativação da assistente
 NOME_ASSISTENTE = "chico"
 ALIASES_ATIVACAO = {"chico", "tchico", "chicos"}  # variações de pronúncia
+
+# Tier 3 — intents que pedem rosto reconhecido antes de executar
+COMANDOS_SENSIVEIS = {"limpar_agenda", "desligar_pc", "bloquear_tela"}
 
 
 class Chico:
@@ -77,6 +82,11 @@ class Chico:
         # thread proativa fala primeiro (lembretes da agenda + presença)
         self.agente = Agente(self.ia, self)
         self.proativo = Proativo(self.agenda, self.falar)
+
+        # Tier 3 — rosto vira login (dados por pessoa + gate biométrico)
+        # e o quiz de estudo gerado pela IA
+        self.perfis = Perfis(self.face)
+        self.quiz = Quiz(self.ia, self.agenda, self.notas)
 
         # Roteador por embeddings — remove a determinicidade dos if "palavra" in instrucao
         # Usa TF-IDF offline por padrao; para embeddings reais do Gemini, passe usar_gemini=True
@@ -189,6 +199,15 @@ class Chico:
         intent, score, _ = self.roteador.rotear(instrucao)
         logger.debug("Roteamento: '%s' -> %s (%.2f)", instrucao[:50], intent, score)
 
+        # Tier 3 — gate biométrico: comandos sensíveis pedem rosto antes
+        if intent in COMANDOS_SENSIVEIS:
+            negado = self.perfis.gate()
+            if negado:
+                self.falar(negado)
+                return True
+            if self.perfis.usuario_atual:
+                self._aplicar_perfil(self.perfis.usuario_atual)
+
         # Se nao reconheceu nenhum intent, o agente tenta planejar com as
         # ferramentas (ex.: "agenda a prova sexta e vê o clima"); sem Gemini
         # ou sem tool útil cai no fallback comum de IA generativa.
@@ -265,8 +284,10 @@ class Chico:
 
         elif intent == "reconhecer_face":
             self.falar("Abrindo a câmera para reconhecimento facial...")
-            nome = self.face.reconhecer()
-            self.falar(f"Reconheci: {nome}")
+            mensagem, nome = self.perfis.identificar()
+            self.falar(mensagem)
+            if nome:
+                self._aplicar_perfil(nome)
 
         # ── IA GENERATIVA (Gemini) ────────────────────────────────────────
         elif intent == "ia_generativa":
@@ -393,6 +414,39 @@ class Chico:
             self.ia.limpar_historico()
             self.falar("Pronto, esqueci tudo que a gente conversou.")
 
+        # ── TIER 3: PERFIS E QUIZ ─────────────────────────────────────────
+        elif intent == "perfil":
+            low = instrucao.lower()
+            if any(p in low for p in ("sai", "sair", "fecha", "fechar", "deslog", "troca")):
+                self.falar(self.perfis.sair())
+                self._aplicar_perfil(None)
+            elif "quem" in low or "logado" in low:
+                self.falar(self.perfis.quem())
+            else:
+                self.falar("Abrindo a câmera para reconhecer...")
+                mensagem, nome = self.perfis.identificar()
+                self.falar(mensagem)
+                if nome:
+                    self._aplicar_perfil(nome)
+
+        elif intent == "quiz":
+            perguntas, tema, erro = self.quiz.preparar(instrucao)
+            if not perguntas:
+                self.falar(erro)
+            else:
+                self.falar(f"Quiz de {tema}! São {len(perguntas)} perguntas.")
+                acertos = 0
+                for i, pergunta in enumerate(perguntas, 1):
+                    self.falar(f"Pergunta {i}: {pergunta}")
+                    resposta = self.ouvir_ou_digitar("Sua resposta...")
+                    if not resposta.strip():
+                        self.falar("Sem resposta, pulando essa.")
+                        continue
+                    comentario, acertou = self.quiz.avaliar(pergunta, resposta)
+                    self.falar(comentario)
+                    acertos += acertou
+                self.falar(f"Fim do quiz: {acertos}/{len(perguntas)} acertos.")
+
         # ── SAUDAÇÕES ─────────────────────────────────────────────────────
         elif intent == "saudacao":
             self.falar("Olá! Como posso ajudar?")
@@ -410,6 +464,22 @@ class Chico:
             self.falar(resposta)
 
         return True
+
+    def _aplicar_perfil(self, nome: str | None) -> None:
+        """
+        Aponta agenda/notas para a pasta do perfil (ou de volta ao global).
+        agenda.trocar/notas.trocar preservam a instância — quem guardou
+        referência (rotinas, proativo, quiz, agente) segue o perfil sozinho.
+        """
+        if nome:
+            pasta = self.perfis.pasta_perfil(nome)
+            self.agenda.trocar(pasta / "agenda.txt")
+            self.notas.trocar(pasta / "notas.md")
+            logger.info("Dados de perfil aplicados: %s", pasta)
+        else:
+            self.agenda.trocar()
+            self.notas.trocar()
+            logger.info("Dados globais restaurados.")
 
     # ------------------------------------------------------------------ #
     #  LOOP PRINCIPAL                                                      #
